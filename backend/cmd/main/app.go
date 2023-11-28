@@ -1,38 +1,44 @@
 package main
 
 import (
+	"backend/internal/sneakers"
+	"backend/internal/users"
+	"github.com/gookit/slog"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net"
 	"net/http"
-	"restApiSneakerShop/internal/handlers/sneaker"
 	"time"
 )
 
 func main() {
-	log.Println("create router")
+	slog.Info("CREATE ROUTER")
 	router := httprouter.New()
 
-	log.Println("register user handler")
-	handler := sneaker.NewHandler()
+	slog.Info("REGISTER USER HANDLER")
+	handler := users.NewHandler()
+	handler.Register(router)
+	slog.Info("REGISTER SNEAKER HANDLER")
+	handler = sneakers.NewHandler()
 	handler.Register(router)
 
 	start(router)
 }
 
 func start(router *httprouter.Router) {
-	log.Println("start application")
-	listener, err := net.Listen("tcp", ":8080")
+	slog.Info("START APPLICATION")
+
+	listener, err := net.Listen("tcp", ":1234")
 	if err != nil {
 		panic(err)
 	}
 
 	server := &http.Server{
 		Handler:      router,
-		WriteTimeout: 10 * time.Second,
-		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Println("server is listening port 1234")
+	slog.Info("SERVER IS LISTENING PORT 0.0.0.0:1234")
 	log.Fatalln(server.Serve(listener))
 }
