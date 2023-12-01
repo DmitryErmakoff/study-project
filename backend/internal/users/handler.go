@@ -14,6 +14,7 @@ const (
 	API         = "/api"
 	registerURL = API + "/register"
 	loginURL    = API + "/login"
+	logoutURL   = API + "/logout"
 )
 
 var UserService User
@@ -28,9 +29,12 @@ func NewHandler() handlers.Handler {
 func (h *handler) Register(router *httprouter.Router) {
 	router.POST(loginURL, h.LoginUser)
 	router.POST(registerURL, h.RegisterUser)
+	router.GET(logoutURL, h.LogoutUser)
 }
 
 func (h *handler) RegisterUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
 	var u User
 	json.NewDecoder(r.Body).Decode(&u)
 	insertUser := `insert into "users"("name", "password", "access_rights") values($1, $2, $3)`
@@ -47,6 +51,9 @@ func (h *handler) RegisterUser(w http.ResponseWriter, r *http.Request, params ht
 }
 
 func (h *handler) LoginUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
 	var u User
 	json.NewDecoder(r.Body).Decode(&u)
 	rows, err := postgresql.DB.Query(`SELECT * FROM users`)
@@ -84,4 +91,20 @@ func (h *handler) LoginUser(w http.ResponseWriter, r *http.Request, params httpr
 	w.WriteHeader(400)
 	w.Write([]byte("Неправильное имя пользователя или пароль"))
 	return
+}
+
+func (h *handler) LogoutUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	if UserService.Name == "" && UserService.Password == "" && UserService.Permission == "" {
+		w.WriteHeader(400)
+		w.Write([]byte("Пользователь не авторизован"))
+		return
+	}
+	log.Printf("Пользователь %s, вышел из системы", UserService.Name)
+	UserService.Name = ""
+	UserService.Password = ""
+	UserService.Permission = ""
+	w.WriteHeader(200)
+	w.Write([]byte("Пользователь вышел из системы"))
 }
